@@ -1,0 +1,37 @@
+name: mermaid
+type: diagram-generation
+description: "Mermaid diagram generation and rendering"
+
+# Connection methods this service supports
+adapters:
+  mcp:
+    command: "npx"
+    args: ["mermaid-mcp-server"]
+    env: {}
+  cli:
+    command: "mmdc"
+    output_format: "svg"
+  web_api:
+    base_url: "https://mermaid.ink"
+
+# Required parameters
+parameters:
+  output_dir:
+    type: path
+    description: "Directory to save generated diagrams"
+    required: false
+    default: "./diagrams"
+  theme:
+    type: string
+    description: "Mermaid theme (default, dark, forest, etc.)"
+    required: false
+    default: "default"
+
+# Tool capabilities
+capabilities:
+  - flowchart-generation
+  - sequence-diagram-generation
+  - gantt-chart-generation
+  - class-diagram-generation
+  - state-diagram-generation
+  - c4-diagram-generation

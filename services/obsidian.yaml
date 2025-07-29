@@ -1,0 +1,48 @@
+name: obsidian
+type: knowledge-management
+description: "Note-taking and knowledge management system"
+
+# Connection methods this service supports
+adapters:
+  mcp:
+    command: "npx"
+    args: ["mcp-obsidian", "{vault_path}"]
+    env: {}
+  rest_api:
+    requires: [api_key, host, port]
+    base_url: "http://{host}:{port}"
+    auth: "Bearer {api_key}"
+  direct_fs:
+    requires: [vault_path]
+    access_type: "filesystem"
+
+# Required parameters
+parameters:
+  vault_path:
+    type: path
+    description: "Path to Obsidian vault"
+    required: true
+  api_key:
+    type: secret
+    description: "API key for REST access (Local REST API plugin)"
+    required: false
+  host:
+    type: string
+    default: "localhost"
+    description: "Host for REST API connection"
+    required: false
+  port:
+    type: integer
+    default: 27123
+    description: "Port for REST API connection"
+    required: false
+
+# Tool capabilities
+capabilities:
+  - note-creation
+  - note-reading
+  - note-search
+  - note-linking
+  - template-processing
+  - tag-management
+  - vault-navigation

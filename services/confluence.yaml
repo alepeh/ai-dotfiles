@@ -1,0 +1,43 @@
+name: confluence
+type: documentation-platform
+description: "Atlassian Confluence wiki and documentation platform"
+
+# Connection methods this service supports
+adapters:
+  rest_api:
+    base_url: "{base_url}/rest/api"
+    auth: "Bearer {api_token}"
+    headers:
+      Accept: "application/json"
+      Content-Type: "application/json"
+  mcp:
+    command: "npx"
+    args: ["confluence-mcp-server"]
+    env:
+      CONFLUENCE_BASE_URL: "{base_url}"
+      CONFLUENCE_API_TOKEN: "{api_token}"
+
+# Required parameters
+parameters:
+  base_url:
+    type: url
+    description: "Confluence base URL (e.g., https://company.atlassian.net)"
+    required: true
+  api_token:
+    type: secret
+    description: "Confluence API token"
+    required: true
+  space_key:
+    type: string
+    description: "Default Confluence space key"
+    required: false
+
+# Tool capabilities
+capabilities:
+  - page-creation
+  - page-reading
+  - page-updating
+  - space-navigation
+  - search
+  - comment-management
+  - attachment-handling

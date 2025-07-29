@@ -1,0 +1,31 @@
+name: filesystem
+type: file-access
+description: "Local filesystem access and manipulation"
+
+# Connection methods this service supports
+adapters:
+  mcp:
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-filesystem", "{allowed_paths}"]
+    env: {}
+  direct:
+    access_type: "filesystem"
+    security: "sandboxed"
+
+# Required parameters
+parameters:
+  allowed_paths:
+    type: path_list
+    description: "Comma-separated list of allowed directory paths"
+    required: true
+    default: "~/Projects,~/Documents"
+
+# Tool capabilities
+capabilities:
+  - file-reading
+  - file-writing
+  - directory-navigation
+  - file-search
+  - file-creation
+  - file-deletion
+  - permission-management

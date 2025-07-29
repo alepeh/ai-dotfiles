@@ -1,0 +1,210 @@
+#!/usr/bin/env python3
+"""
+AI Dotfiles - Universal AI Tool Configuration Management System
+"""
+
+import argparse
+import json
+import yaml
+import sys
+from pathlib import Path
+from typing import Dict, List, Any
+
+# Add the current directory to Python path for imports
+sys.path.insert(0, str(Path(__file__).parent))
+
+from adapters.claude_code import ClaudeCodeAdapter
+from adapters.cursor import CursorAdapter
+from adapters.continue_dev import ContinueAdapter
+
+class AIDotfiles:
+    def __init__(self):
+        self.config_dir = Path(__file__).parent
+        self.config_file = self.config_dir / "config.yaml"
+        
+        # Available adapters
+        self.adapters = {
+            "claude-code": ClaudeCodeAdapter,
+            "cursor": CursorAdapter,
+            "continue": ContinueAdapter
+        }
+    
+    def load_config(self) -> Dict[str, Any]:
+        """Load current user configuration"""
+        if self.config_file.exists():
+            with open(self.config_file, 'r') as f:
+                return yaml.safe_load(f) or {}
+        return {}
+    
+    def save_config(self, config: Dict[str, Any]):
+        """Save user configuration"""
+        with open(self.config_file, 'w') as f:
+            yaml.dump(config, f, default_flow_style=False)
+    
+    def list_services(self):
+        """List all available services"""
+        services_dir = self.config_dir / "services"
+        print("Available services:")
+        for service_file in services_dir.glob("*.yaml"):
+            with open(service_file, 'r') as f:
+                service = yaml.safe_load(f)
+            print(f"  {service['name']}: {service['description']}")
+    
+    def list_profiles(self):
+        """List all available profiles"""
+        profiles_dir = self.config_dir / "profiles"
+        print("Available profiles:")
+        for profile_file in profiles_dir.glob("*.yaml"):
+            with open(profile_file, 'r') as f:
+                profile = yaml.safe_load(f)
+            print(f"  {profile['name']}: {profile['description']}")
+    
+    def list_tools(self):
+        """List all supported tools"""
+        print("Supported tools:")
+        for tool_name in self.adapters.keys():
+            print(f"  {tool_name}")
+    
+    def show_config(self):
+        """Show current configuration"""
+        config = self.load_config()
+        if not config:
+            print("No configuration found. Use 'ai-dotfiles config set' to configure services.")
+            return
+        
+        print("Current configuration:")
+        print(yaml.dump(config, default_flow_style=False))
+    
+    def set_config(self, key: str, value: str):
+        """Set a configuration parameter"""
+        config = self.load_config()
+        
+        # Parse nested keys like "obsidian.vault_path"
+        keys = key.split('.')
+        current = config
+        
+        # Navigate to the parent of the target key
+        for k in keys[:-1]:
+            if k not in current:
+                current[k] = {}
+            current = current[k]
+        
+        # Set the final value
+        current[keys[-1]] = value
+        
+        self.save_config(config)
+        print(f"✓ Set {key} = {value}")
+    
+    def get_config(self, key: str):
+        """Get a configuration parameter"""
+        config = self.load_config()
+        
+        # Parse nested keys
+        keys = key.split('.')
+        current = config
+        
+        try:
+            for k in keys:
+                current = current[k]
+            print(f"{key} = {current}")
+        except KeyError:
+            print(f"Configuration key '{key}' not found")
+    
+    def install_tool(self, tool_name: str, output_dir: str = None):
+        """Install configuration for a specific tool"""
+        if tool_name not in self.adapters:
+            print(f"Unsupported tool: {tool_name}")
+            print(f"Supported tools: {', '.join(self.adapters.keys())}")
+            return
+        
+        print(f"Installing configuration for {tool_name}...")
+        
+        adapter_class = self.adapters[tool_name]
+        adapter = adapter_class(self.config_dir)
+        
+        output_path = Path(output_dir) if output_dir else None
+        
+        if tool_name == "claude-code":
+            adapter.install_claude_code_config(output_path)
+        elif tool_name == "cursor":
+            adapter.install_cursor_config(output_path)
+        elif tool_name == "continue":
+            adapter.install_continue_config(output_path)
+        
+        print(f"✓ {tool_name} configuration installed successfully")
+    
+    def sync_all(self):
+        """Sync configuration to all supported tools"""
+        print("Syncing configuration to all supported tools...")
+        
+        for tool_name in self.adapters.keys():
+            try:
+                self.install_tool(tool_name)
+            except Exception as e:
+                print(f"✗ Failed to sync {tool_name}: {e}")
+        
+        print("✓ Sync completed")
+
+def main():
+    parser = argparse.ArgumentParser(description="AI Dotfiles - Universal AI Tool Configuration Management")
+    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+    
+    # List commands
+    list_parser = subparsers.add_parser('list', help='List available items')
+    list_parser.add_argument('type', choices=['services', 'profiles', 'tools'], help='What to list')
+    
+    # Config commands
+    config_parser = subparsers.add_parser('config', help='Manage configuration')
+    config_subparsers = config_parser.add_subparsers(dest='config_action')
+    
+    config_show = config_subparsers.add_parser('show', help='Show current configuration')
+    
+    config_set = config_subparsers.add_parser('set', help='Set configuration value')
+    config_set.add_argument('key', help='Configuration key (e.g., obsidian.vault_path)')
+    config_set.add_argument('value', help='Configuration value')
+    
+    config_get = config_subparsers.add_parser('get', help='Get configuration value')
+    config_get.add_argument('key', help='Configuration key')
+    
+    # Install command
+    install_parser = subparsers.add_parser('install', help='Install configuration for a tool')
+    install_parser.add_argument('tool', help='Tool name (claude-code, cursor, continue)')
+    install_parser.add_argument('--output-dir', help='Output directory (for testing)')
+    
+    # Sync command
+    sync_parser = subparsers.add_parser('sync', help='Sync configuration to all tools')
+    
+    args = parser.parse_args()
+    
+    if not args.command:
+        parser.print_help()
+        return
+    
+    dotfiles = AIDotfiles()
+    
+    if args.command == 'list':
+        if args.type == 'services':
+            dotfiles.list_services()
+        elif args.type == 'profiles':
+            dotfiles.list_profiles()
+        elif args.type == 'tools':
+            dotfiles.list_tools()
+    
+    elif args.command == 'config':
+        if args.config_action == 'show':
+            dotfiles.show_config()
+        elif args.config_action == 'set':
+            dotfiles.set_config(args.key, args.value)
+        elif args.config_action == 'get':
+            dotfiles.get_config(args.key)
+        else:
+            config_parser.print_help()
+    
+    elif args.command == 'install':
+        dotfiles.install_tool(args.tool, args.output_dir)
+    
+    elif args.command == 'sync':
+        dotfiles.sync_all()
+
+if __name__ == "__main__":
+    main()

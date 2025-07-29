@@ -1,0 +1,40 @@
+name: github
+type: code-repository
+description: "GitHub repository management and collaboration"
+
+# Connection methods this service supports
+adapters:
+  mcp:
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-github"]
+    env:
+      GITHUB_PERSONAL_ACCESS_TOKEN: "{api_token}"
+  rest_api:
+    base_url: "https://api.github.com"
+    auth: "Bearer {api_token}"
+    headers:
+      Accept: "application/vnd.github.v3+json"
+  gh_cli:
+    command: "gh"
+    auth_method: "token"
+
+# Required parameters
+parameters:
+  api_token:
+    type: secret
+    description: "GitHub personal access token"
+    required: true
+  default_org:
+    type: string
+    description: "Default GitHub organization"
+    required: false
+
+# Tool capabilities
+capabilities:
+  - repository-access
+  - issue-management
+  - pull-request-management
+  - code-search
+  - commit-history
+  - branch-management
+  - release-management
