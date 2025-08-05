@@ -75,7 +75,8 @@ class ContinueAdapter:
                             "name": "github",
                             "params": {
                                 "token": service_params["api_token"],
-                                "repo": service_params.get("default_repo", "")
+                                "repo": service_params.get("default_repo")
+                                        or service_params.get("default_org", "")
                             }
                         })
                 
